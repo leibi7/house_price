@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ház Ár Prediktor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Ház Ár Prediktor</h1>
+        <p>Add meg a ház jellemzőit a becsült ár megtekintéséhez. A modell betöltése eltarthat egy ideig.</p>
+        
+        <div id="loading-message">Modell és komponensek betöltése... Kérlek várj.</div>
+        <div id="error-message" class="error"></div>
+        <div id="prediction-form" style="display:none;">
+            <h2>Jellemzők:</h2>
+            <form id="house-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="OverallQual">Általános Minőség (1-10):</label>
+                        <input type="number" id="OverallQual" name="OverallQual" min="1" max="10" value="7" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="GrLivArea">Lakóterület (földszint felett, m²):</label>
+                        <input type="number" id="GrLivArea" name="GrLivArea" value="150" min="30" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="TotalBsmtSF">Teljes Pince Terület (m²):</label>
+                        <input type="number" id="TotalBsmtSF" name="TotalBsmtSF" value="80" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="YearBuilt">Építés Éve:</label>
+                        <input type="number" id="YearBuilt" name="YearBuilt" value="2005" min="1800" max="2025" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="YrSold">Eladás Éve:</label>
+                        <input type="number" id="YrSold" name="YrSold" value="2023" min="2000" max="2030" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="FullBath">Teljes Fürdőszobák Száma:</label>
+                        <input type="number" id="FullBath" name="FullBath" value="2" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="GarageArea">Garázs Területe (m²):</label>
+                        <input type="number" id="GarageArea" name="GarageArea" value="50" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="LotArea">Telek Területe (m²):</label>
+                        <input type="number" id="LotArea" name="LotArea" value="900" min="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Neighborhood">Környék:</label>
+                        <select id="Neighborhood" name="Neighborhood">
+                            <option value="NAmes">NAmes</option>
+                            <option value="CollgCr">CollgCr</option>
+                            <option value="OldTown">OldTown</option>
+                            <option value="Edwards">Edwards</option>
+                            <option value="Somerst">Somerst</option>
+                            <option value="Gilbert">Gilbert</option>
+                            <option value="NridgHt">NridgHt</option>
+                            <option value="Sawyer">Sawyer</option>
+                            <option value="NWAmes">NWAmes</option>
+                            <option value="SawyerW">SawyerW</option>
+                            <option value="BrkSide">BrkSide</option>
+                            <option value="Crawfor">Crawfor</option>
+                            <option value="Mitchel">Mitchel</option>
+                            <option value="NoRidge">NoRidge</option>
+                            <option value="Timber">Timber</option>
+                            <option value="IDOTRR">IDOTRR</option>
+                            <option value="ClearCr">ClearCr</option>
+                            <option value="StoneBr">StoneBr</option>
+                            <option value="SWISU">SWISU</option>
+                            <option value="MeadowV">MeadowV</option>
+                            <option value="Blmngtn">Blmngtn</option>
+                            <option value="BrDale">BrDale</option>
+                            <option value="Veenker">Veenker</option>
+                            <option value="NPkVill">NPkVill</option>
+                            <option value="Blueste">Blueste</option>
+                            <option value="GrnHill">GrnHill</option>
+                            <option value="Greens">Greens</option>
+                            <option value="Landmrk">Landmrk</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ExterQual">Külső Minőség:</label>
+                        <select id="ExterQual" name="ExterQual">
+                            <option value="TA">Átlagos (TA)</option>
+                            <option value="Gd">Jó (Gd)</option>
+                            <option value="Ex">Kiváló (Ex)</option>
+                            <option value="Fa">Elégséges (Fa)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="KitchenQual">Konyha Minősége:</label>
+                        <select id="KitchenQual" name="KitchenQual">
+                             <option value="TA">Átlagos (TA)</option>
+                            <option value="Gd">Jó (Gd)</option>
+                            <option value="Ex">Kiváló (Ex)</option>
+                            <option value="Fa">Elégséges (Fa)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="BsmtQual">Pince Minősége:</label>
+                        <select id="BsmtQual" name="BsmtQual">
+                            <option value="TA">Átlagos (TA)</option>
+                            <option value="Gd">Jó (Gd)</option>
+                            <option value="Ex">Kiváló (Ex)</option>
+                            <option value="Fa">Elégséges (Fa)</option>
+                            <option value="NA">Nincs Pince (NA)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="LotFrontage">Utcafront hossza (m):</label>
+                        <input type="number" id="LotFrontage" name="LotFrontage" value="20" min="0">
+                        <small>Hagyd üresen, ha ismeretlen</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="MSZoning">Telek Övezeti Besorolása:</label>
+                         <select id="MSZoning" name="MSZoning">
+                            <option value="RL">RL (Residential Low Density)</option>
+                            <option value="RM">RM (Residential Medium Density)</option>
+                            <option value="FV">FV (Floating Village Residential)</option>
+                            <option value="RH">RH (Residential High Density)</option>
+                            <option value="C (all)">C (Commercial)</option>
+                            <option value="I (all)">I (Industrial)</option>
+                            <option value="A (agr)">A (Agricultural)</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="CentralAir">Központi Légkondi (Y/N):</label>
+                         <select id="CentralAir" name="CentralAir">
+                            <option value="Y">Igen (Y)</option>
+                            <option value="N">Nem (N)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="predict-button">Ár Becslése</button>
+            </form>
+            <div id="result-area" style="display:none;">
+                <h2>Becsült Ár:</h2>
+                <p id="prediction-output"></p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
